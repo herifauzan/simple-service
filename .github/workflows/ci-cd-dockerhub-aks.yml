@@ -142,21 +142,21 @@ jobs:
       #     resource-group: '${{ env.AKS_RESOURCE_GROUP }}'
       - name: Create namespace if not exists
         run: |
-          if [ -z "${{ env.NAMESPACE }}" ]; then
+          if [ -z "${{ var.NAMESPACE }}" ]; then
             echo "ERROR: NAMESPACE environment variable is not set."
             exit 1
           fi
-          echo "Ensuring namespace exists: ${{ env.NAMESPACE }}"
-          kubectl get namespace "${{ env.NAMESPACE }}" >/dev/null 2>&1 || \
-            kubectl create namespace "${{ env.NAMESPACE }}"
+          echo "Ensuring namespace exists: ${{ var.NAMESPACE }}"
+          kubectl get namespace "${{ var.NAMESPACE }}" >/dev/null 2>&1 || \
+            kubectl create namespace "${{ var.NAMESPACE }}"
       - name: Deploy all k8s manifests
         run: |
           set -euo pipefail
-          if [ -z "${{ env.NAMESPACE }}" ]; then
+          if [ -z "${{ var.NAMESPACE }}" ]; then
             echo "ERROR: NAMESPACE environment variable is not set."
             exit 1
           fi
-          NS="${{ env.NAMESPACE }}"
+          NS="${{ var.NAMESPACE }}"
           echo "Using namespace: $NS"
           # Create namespace if it doesn't exist (idempotent)
           kubectl get namespace "$NS" >/dev/null 2>&1 || kubectl create namespace "$NS"
