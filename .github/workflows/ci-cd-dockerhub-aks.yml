@@ -115,20 +115,31 @@ jobs:
       - name: Azure CLI version
         run: az --version
         
-      - name: Get admin AKS credentials (avoid kubelogin)
+      - name: Install dependencies (unzip, curl)
         run: |
-          az aks get-credentials \
-            --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
-            --name ${{ secrets.AKS_CLUSTER_NAME }} \
-            --admin \
-            --overwrite-existing
+          sudo apt-get update -y
+          sudo apt-get install -y unzip curl
+      
+      - name: Install kubelogin (Azure AD client-go plugin)
+        env:
+          KUBELOGIN_VERSION: "v0.0.30"   # change if you want a different release
+        run: |
+          # fetch the github release asset (linux_amd64 zip), unzip, move to /usr/local/bin
+          URL="https://github.com/Azure/kubelogin/releases/download/${KUBELOGIN_VERSION}/kubelogin_${KUBELOGIN_VERSION#v}_linux_amd64.zip"
+          echo "Downloading $URL"
+          curl -sL -o /tmp/kubelogin.zip "$URL"
+          unzip -o /tmp/kubelogin.zip -d /tmp
+          sudo mv /tmp/kubelogin /usr/local/bin/kubelogin
+          sudo chmod +x /usr/local/bin/kubelogin
+          kubelogin --version || true
 
-      # - name: Set kubectl context for AKS
-      #   uses: azure/aks-set-context@v3
-      #   with:
-      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
-      #     cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
-      #     resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
+
+      - name: Set kubectl context for AKS
+        uses: azure/aks-set-context@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
+          resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
 
       - name: Replace image in k8s manifests and deploy
         env:
